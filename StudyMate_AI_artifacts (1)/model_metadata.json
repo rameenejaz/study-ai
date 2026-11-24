@@ -1,0 +1,49 @@
+{
+  "best_model": "Logistic Regression",
+  "labels": [
+    "World",
+    "Sports",
+    "Business",
+    "Sci/Tech"
+  ],
+  "training_records_used": 32000,
+  "test_records": 7600,
+  "dataset": "fancyzhx/ag_news",
+  "results": [
+    {
+      "Model": "Logistic Regression",
+      "Accuracy": 0.9069736842105263,
+      "Macro Precision": 0.9067973773898674,
+      "Macro Recall": 0.9069736842105263,
+      "Macro F1": 0.9068182965805103
+    },
+    {
+      "Model": "Linear SVM",
+      "Accuracy": 0.9063157894736842,
+      "Macro Precision": 0.906019569185611,
+      "Macro Recall": 0.9063157894736842,
+      "Macro F1": 0.9060819221613948
+    },
+    {
+      "Model": "Multinomial Naive Bayes",
+      "Accuracy": 0.8923684210526316,
+      "Macro Precision": 0.891991411194045,
+      "Macro Recall": 0.8923684210526315,
+      "Macro F1": 0.8919628217864385
+    },
+    {
+      "Model": "k-NN",
+      "Accuracy": 0.8802631578947369,
+      "Macro Precision": 0.8798706065461835,
+      "Macro Recall": 0.8802631578947367,
+      "Macro F1": 0.8799382390197826
+    },
+    {
+      "Model": "Random Forest",
+      "Accuracy": 0.8586842105263158,
+      "Macro Precision": 0.8586816246647775,
+      "Macro Recall": 0.8586842105263157,
+      "Macro F1": 0.857818769671598
+    }
+  ]
+}
