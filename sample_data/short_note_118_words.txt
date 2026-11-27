@@ -1,0 +1,7 @@
+Cloud computing delivers computing services such as servers, storage and software over the internet. Instead of buying hardware, organisations rent resources and pay only for what they use.
+
+There are three main service models. Infrastructure as a Service (IaaS) provides virtual machines and storage. Platform as a Service (PaaS) provides a managed environment for building and deploying applications. Software as a Service (SaaS) delivers complete applications through a web browser.
+
+Elasticity is the ability to add or remove resources automatically as demand changes. This makes cloud systems cost-effective for workloads that vary during the day.
+
+The main risks are data security, vendor lock-in and dependence on a reliable network connection, so companies must plan before migrating critical systems.

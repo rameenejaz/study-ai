@@ -1,0 +1,21 @@
+Machine Learning Fundamentals — Week 2 Notes
+
+Machine learning is a branch of artificial intelligence that builds systems which learn patterns from data instead of following explicitly programmed rules. Arthur Samuel popularised the term machine learning in 1959 while working on a checkers-playing program at IBM.
+
+Supervised learning is a type of machine learning in which the model is trained on labelled examples, where every input comes with the correct output. Classification and regression are the two main supervised tasks. Classification predicts a discrete category, such as whether an email is spam. Regression predicts a continuous value, such as the price of a house.
+
+Unsupervised learning is a type of machine learning that finds structure in data without labels. Clustering groups similar data points together; k-means is the most widely taught clustering algorithm. Dimensionality reduction, for example principal component analysis (PCA), compresses many features into a few new features that keep most of the variance.
+
+Reinforcement learning is an approach in which an agent learns by interacting with an environment and receiving rewards or penalties. The agent's goal is to learn a policy that maximises the total reward over time.
+
+Feature extraction is the process of turning raw data into numerical features that a model can use. For text, TF-IDF (term frequency–inverse document frequency) gives a high weight to words that are frequent in one document but rare across the whole collection.
+
+Overfitting occurs when a model learns the training data too closely, including its noise, and therefore performs poorly on new data. Underfitting is the opposite problem: the model is too simple to capture the real pattern. Regularisation reduces overfitting by adding a penalty for large model weights to the loss function.
+
+Data is normally divided into a training set, a validation set and a test set. The test set must only be used once, at the end, to estimate performance on unseen data. Cross-validation is a resampling technique that splits the data into k folds, trains on k − 1 folds and tests on the remaining fold, repeating the process k times. Ten-fold cross-validation is a common choice.
+
+Logistic regression is a linear model used for classification that outputs class probabilities through the sigmoid or softmax function. A support vector machine (SVM) is a classifier that finds the boundary with the largest margin between classes. A random forest is an ensemble of decision trees trained on random subsets of the data and features, and it predicts by majority vote. The k-nearest neighbours (k-NN) algorithm classifies a new point using the labels of the k closest training points.
+
+Accuracy is the proportion of predictions that are correct. Precision is the share of predicted positive cases that are truly positive, while recall is the share of actual positive cases that the model finds. The F1 score is the harmonic mean of precision and recall, and it is useful when the classes are imbalanced. A confusion matrix is a table that shows, for every true class, how many examples were assigned to each predicted class.
+
+Gradient descent is an optimisation algorithm that updates the model parameters in the direction that reduces the loss. The learning rate controls the size of each update; if it is too large the training may diverge, and if it is too small training becomes very slow.

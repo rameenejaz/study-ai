@@ -45,5 +45,14 @@
       "Macro Recall": 0.8586842105263157,
       "Macro F1": 0.857818769671598
     }
-  ]
+  ],
+  "sklearn_version": "1.6.1",
+  "sklearn_version_note": "Read from the pickle's version warning; the artifacts were saved with scikit-learn 1.6.1.",
+  "preprocessing": "clean_text: lowercase, remove URLs, keep [a-z0-9 ], collapse spaces (see modules/preprocessing.py)",
+  "label_mapping": {
+    "0": "World",
+    "1": "Sports",
+    "2": "Business",
+    "3": "Sci/Tech"
+  }
 }

@@ -1,64 +1,103 @@
-import os, re, json, argparse, joblib
+"""Retrain the AG News topic classifier (migration path if the saved artifacts ever become incompatible).
+
+This reproduces notebook sections 5–11 exactly (same cleaning, TF-IDF settings,
+five algorithms, selection by macro-F1, 8,000 records per class by default)
+and writes the same artifact files. The Streamlit app never trains: it only
+loads these files.
+
+Usage (macOS):
+    python3 -m pip install datasets pandas
+    python3 train.py                       # 8,000 per class, as in the notebook
+    python3 train.py --sample-per-class 0  # all 120,000 training records
+"""
+
+import argparse
+import json
+import os
+
+import joblib
+import numpy as np
 import pandas as pd
-from datasets import load_dataset
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.pipeline import Pipeline
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
+import sklearn
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
+
+from modules.preprocessing import clean_text
 
 LABELS = ["World", "Sports", "Business", "Sci/Tech"]
+SEED = 42
+MAX_FEATURES = 30000
 
-def clean_text(text):
-    text = str(text).lower()
-    text = re.sub(r"http\S+|www\.\S+", " ", text)
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sample-per-class", type=int, default=0,
-                        help="Optional training cap per class; 0 uses all records.")
+    parser.add_argument("--sample-per-class", type=int, default=8000,
+                        help="Training records per class (notebook default 8000); 0 uses all 120,000.")
+    parser.add_argument("--output", default="artifacts")
     args = parser.parse_args()
+
+    from datasets import load_dataset  # only needed for training, not for the app
+
     data = load_dataset("fancyzhx/ag_news")
     train_df, test_df = pd.DataFrame(data["train"]), pd.DataFrame(data["test"])
     if args.sample_per_class:
         train_df = (train_df.groupby("label", group_keys=False)
-                    .apply(lambda x: x.sample(min(len(x), args.sample_per_class), random_state=42))
+                    .apply(lambda x: x.sample(n=min(len(x), args.sample_per_class), random_state=SEED))
                     .reset_index(drop=True))
     X_train, y_train = train_df.text.map(clean_text), train_df.label.astype(int)
     X_test, y_test = test_df.text.map(clean_text), test_df.label.astype(int)
+
     models = {
         "Multinomial Naive Bayes": MultinomialNB(alpha=0.5),
         "Logistic Regression": LogisticRegression(max_iter=1000, C=4.0),
         "Linear SVM": LinearSVC(C=1.0),
-        "Random Forest": RandomForestClassifier(n_estimators=200, max_features="sqrt", n_jobs=-1, random_state=42),
-        "k-NN": KNeighborsClassifier(n_neighbors=5, n_jobs=-1)
+        "Random Forest": RandomForestClassifier(n_estimators=200, max_features="sqrt", n_jobs=-1, random_state=SEED),
+        "k-NN": KNeighborsClassifier(n_neighbors=5, n_jobs=-1),
     }
-    results, best, best_f1 = [], None, -1
-    for name, clf in models.items():
-        pipe = Pipeline([("tfidf", TfidfVectorizer(max_features=30000, ngram_range=(1,2), min_df=2, sublinear_tf=True)),
-                         ("classifier", clf)])
-        print("Training", name)
+    results, fitted = [], {}
+    for name, algorithm in models.items():
+        print("Training:", name)
+        pipe = Pipeline([("tfidf", TfidfVectorizer(max_features=MAX_FEATURES, ngram_range=(1, 2), min_df=2,
+                                                   sublinear_tf=True)),
+                         ("classifier", algorithm)])
         pipe.fit(X_train, y_train)
         pred = pipe.predict(X_test)
         p, r, f1, _ = precision_recall_fscore_support(y_test, pred, average="macro", zero_division=0)
-        acc = accuracy_score(y_test, pred)
-        results.append({"model": name, "accuracy": acc, "macro_precision": p, "macro_recall": r, "macro_f1": f1})
-        if f1 > best_f1:
-            best, best_f1, best_name = pipe, f1, name
-    os.makedirs("artifacts", exist_ok=True)
-    joblib.dump(best, "artifacts/best_classifier.joblib")
-    joblib.dump(best.named_steps["tfidf"], "artifacts/tfidf_vectorizer.joblib")
-    pd.DataFrame(results).to_csv("artifacts/model_comparison.csv", index=False)
-    with open("artifacts/model_metadata.json", "w") as f:
-        json.dump({"best_model": best_name, "labels": LABELS, "training_records_used": len(train_df),
-                   "test_records": len(test_df), "dataset": "fancyzhx/ag_news", "results": results}, f, indent=2)
-    print(pd.DataFrame(results).sort_values("macro_f1", ascending=False).to_string(index=False))
-    print("Artifacts saved in ./artifacts")
+        results.append({"Model": name, "Accuracy": accuracy_score(y_test, pred),
+                        "Macro Precision": p, "Macro Recall": r, "Macro F1": f1})
+        fitted[name] = pipe
+
+    results_df = pd.DataFrame(results).sort_values("Macro F1", ascending=False)
+    best_name = results_df.iloc[0]["Model"]
+    best = fitted[best_name]
+
+    os.makedirs(args.output, exist_ok=True)
+    joblib.dump(best, os.path.join(args.output, "best_classifier.joblib"))
+    joblib.dump(best.named_steps["tfidf"], os.path.join(args.output, "tfidf_vectorizer.joblib"))
+    results_df.to_csv(os.path.join(args.output, "model_comparison.csv"), index=False)
+    metadata = {
+        "best_model": best_name,
+        "labels": LABELS,
+        "training_records_used": len(X_train),
+        "test_records": len(X_test),
+        "dataset": "fancyzhx/ag_news",
+        "results": results_df.to_dict(orient="records"),
+        "sklearn_version": sklearn.__version__,
+        "numpy_version": np.__version__,
+        "label_mapping": {str(i): label for i, label in enumerate(LABELS)},
+    }
+    with open(os.path.join(args.output, "model_metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
+    print(results_df.to_string(index=False))
+    print(f"Best model: {best_name}. Artifacts saved in ./{args.output}. "
+          f"Set scikit-learn=={sklearn.__version__} in requirements.txt.")
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,65 @@
+Operating Systems — Lecture 3: Processes, Scheduling, Memory and Files
+
+1. What an Operating System Does
+
+An operating system is the software layer that manages computer hardware and provides common services for application programs. It acts as an intermediary between the user and the hardware, so that programs can run without knowing the details of every device. The two classic goals of an operating system are convenience for the user and efficient use of the hardware. Examples of widely used operating systems include Windows, macOS, Linux, Android and iOS.
+
+The kernel is the core part of the operating system that stays in memory and controls the processor, memory and devices. Code that runs in kernel mode can execute privileged instructions, while ordinary programs run in user mode and cannot touch the hardware directly. A system call is the mechanism a user program uses to request a service from the kernel, such as reading a file or creating a new process. When a system call is made, the processor switches from user mode to kernel mode, performs the requested work, and then returns to user mode.
+
+Different kernel designs exist. A monolithic kernel runs all core services, including device drivers and file systems, in a single address space for speed. A microkernel keeps only the most basic services in the kernel, such as message passing and scheduling, and runs the rest as user-space servers. Linux, first released by Linus Torvalds in 1991, uses a monolithic kernel with loadable modules. The MINIX operating system, written by Andrew Tanenbaum for teaching, is a well-known example of a microkernel design.
+
+2. Processes and Threads
+
+A process is a program in execution. A program on disk is passive, but a process is active: it has a program counter, a stack, a heap, a data section and a set of open files. The operating system keeps track of each process using a process control block (PCB), which stores the process state, the program counter, the CPU registers, scheduling information and memory-management information.
+
+During its lifetime a process moves through several states. A new process is being created. A ready process is waiting to be assigned to the CPU. A running process is currently executing instructions. A waiting process is blocked until some event occurs, such as the completion of an input/output operation. A terminated process has finished execution, and its resources are released by the operating system.
+
+A context switch is the procedure of saving the state of the running process and loading the saved state of another process. Context switching is pure overhead, because the system does no useful work for the user while switching. Its cost depends on hardware support; some processors provide multiple sets of registers so that a switch only changes a pointer.
+
+A thread is the smallest unit of execution that the CPU scheduler can manage. Threads of the same process share code, data and open files, but each thread has its own program counter, registers and stack. Because threads share memory, creating a thread is much cheaper than creating a process, and communication between threads is faster. Multithreading improves responsiveness, for example by letting a web browser download an image while the user continues to scroll.
+
+Processes communicate using interprocess communication (IPC). The two fundamental IPC models are shared memory and message passing. Shared memory is fast because data does not have to be copied by the kernel, but the processes must synchronise their access. Message passing is easier to use correctly and works well across a network, but each message requires a system call.
+
+3. CPU Scheduling
+
+CPU scheduling is the activity of deciding which ready process runs next on the processor. The component that makes this decision is the short-term scheduler, and the dispatcher is the module that actually gives control of the CPU to the selected process. Dispatch latency is the time the dispatcher takes to stop one process and start another.
+
+Scheduling algorithms are compared using several criteria. CPU utilisation measures how busy the processor is kept. Throughput is the number of processes completed per unit of time. Turnaround time is the total time from the submission of a process to its completion. Waiting time is the total time a process spends in the ready queue. Response time is the time from the submission of a request until the first response is produced, which matters most for interactive systems.
+
+First-Come, First-Served (FCFS) scheduling runs processes in the order in which they arrive. It is simple to implement with a FIFO queue, but it suffers from the convoy effect, where short processes wait behind one long process. Shortest-Job-First (SJF) scheduling selects the process with the smallest next CPU burst. SJF gives the minimum average waiting time for a given set of processes, but the length of the next burst can only be estimated, usually with an exponential average of previous bursts.
+
+Round Robin scheduling gives each process a fixed time quantum, typically between 10 and 100 milliseconds, and then moves it to the back of the ready queue. If the quantum is very large, Round Robin behaves like FCFS; if it is very small, the system spends too much time on context switches. Priority scheduling assigns each process a priority number and runs the highest-priority process first. A major problem with priority scheduling is starvation, where low-priority processes may never run. Aging is the technique that solves starvation by gradually increasing the priority of processes that have waited for a long time.
+
+Multilevel queue scheduling divides the ready queue into separate queues, such as one for foreground interactive processes and one for background batch processes. Each queue can use its own algorithm, for example Round Robin for foreground work and FCFS for background work. A multilevel feedback queue additionally allows processes to move between queues based on their behaviour, which makes it the most flexible but also the most complex scheme.
+
+4. Synchronisation and Deadlock
+
+A race condition occurs when several processes access shared data at the same time and the result depends on the order in which the accesses happen. The section of code in which a process accesses shared data is called the critical section. Any solution to the critical-section problem must satisfy three requirements: mutual exclusion, progress and bounded waiting.
+
+A mutex lock is a simple tool that protects a critical section by requiring a process to acquire the lock before entering and release it when leaving. A semaphore is an integer variable that is accessed only through two atomic operations, wait and signal. A counting semaphore can range over an unrestricted domain and is used to control access to a resource with several instances, whereas a binary semaphore behaves like a mutex lock. Edsger Dijkstra introduced the semaphore concept in 1965.
+
+A deadlock is a situation in which a set of processes are blocked because each process is holding a resource and waiting for a resource held by another process in the set. Four conditions must hold at the same time for deadlock to occur: mutual exclusion, hold and wait, no preemption, and circular wait. Deadlock prevention ensures that at least one of these four conditions can never hold. Deadlock avoidance requires advance information about resource requests; the Banker's algorithm is the best-known avoidance algorithm and only grants a request if the system remains in a safe state. A safe state is a state in which the system can allocate resources to every process in some order and still avoid deadlock.
+
+5. Memory Management
+
+Main memory and the registers are the only storage that the CPU can access directly. A logical address is an address generated by the CPU, while a physical address is the address seen by the memory unit. The memory management unit (MMU) is the hardware device that maps logical addresses to physical addresses at run time.
+
+Contiguous allocation places each process in a single section of memory. Over time this creates external fragmentation, where enough total memory exists to satisfy a request but it is not contiguous. Internal fragmentation is the unused memory inside an allocated block, which happens when a block is slightly larger than the requested size. Compaction can reduce external fragmentation by shuffling memory contents, but it is expensive.
+
+Paging is a memory-management scheme that allows the physical address space of a process to be non-contiguous. Physical memory is divided into fixed-sized blocks called frames, and logical memory is divided into blocks of the same size called pages. A page table stores the frame number for each page of a process. Page sizes are usually powers of two, commonly 4 KB. Paging eliminates external fragmentation, although some internal fragmentation can remain in the last page of a process. The translation look-aside buffer (TLB) is a small, fast hardware cache that stores recent page-table entries, so most address translations do not need an extra memory access.
+
+Virtual memory is a technique that allows the execution of processes that are not completely in memory. With demand paging, a page is loaded into memory only when it is needed. A page fault occurs when a process tries to access a page that is not currently in main memory, and the operating system must then bring the page in from secondary storage. When no frame is free, a page-replacement algorithm chooses a victim page. The optimal algorithm replaces the page that will not be used for the longest time, but it is impossible to implement because it requires knowledge of the future. The Least Recently Used (LRU) algorithm approximates it by replacing the page that has not been used for the longest time. Belady's anomaly is the surprising result that, for FIFO page replacement, adding more frames can increase the number of page faults. Thrashing is a condition in which a process spends more time paging than executing, and it is usually caused by giving a process too few frames.
+
+6. File Systems and Storage
+
+A file is a named collection of related information that is recorded on secondary storage. The file system provides the mechanism for storing and accessing both data and programs, and it is organised into directories. An inode is the data structure used by Unix file systems to store information about a file, including its size, owner, permissions and the locations of its data blocks, but not its name.
+
+Disk space can be allocated in three main ways. Contiguous allocation stores a file in consecutive blocks, which gives fast access but causes fragmentation. Linked allocation stores each file as a linked list of blocks scattered anywhere on the disk, which avoids fragmentation but makes direct access slow. Indexed allocation brings all the block pointers together into an index block, which supports direct access without external fragmentation.
+
+Hard disk drives have mechanical arms, so disk scheduling algorithms try to reduce seek time. The SCAN algorithm, also called the elevator algorithm, moves the disk arm from one end of the disk to the other and services requests along the way. Solid-state drives have no moving parts, so seek time is not an issue, and simple FCFS ordering is often used for them.
+
+RAID (redundant array of independent disks) combines several physical disks into one logical unit to improve reliability, performance or both. RAID 0 stripes data across disks for speed but offers no redundancy, while RAID 1 mirrors every block onto a second disk so that the data survives a single disk failure. RAID 5 spreads parity information across all disks, which allows the array to rebuild the contents of one failed disk. Journaling file systems, such as ext4 and NTFS, record pending changes in a log so that the file system can be repaired quickly after a crash.
+
+7. Summary of Key Points
+
+The operating system manages processes, memory, files and devices, and protects them from each other. Scheduling decides which process uses the CPU, synchronisation prevents race conditions, and deadlock handling keeps processes from waiting forever. Paging and virtual memory let many large programs share a limited amount of physical memory, and file systems give persistent, organised storage on disks and solid-state drives.
